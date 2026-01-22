@@ -283,35 +283,67 @@ mvn clean install -DskipTests
 ./deploy/build.sh
 ```
 
-### 5. 启动应用
-
-```bash
-mvn spring-boot:run
-```
-
-应用将在 `http://localhost:8080` 启动。
-
 ### 方式三：从 GitHub 自动化部署 ⭐ 推荐
 
-如果你的代码托管在 GitHub，这是最简单的部署方式：
+在服务器上直接执行，从 GitHub 自动化部署。
 
+**使用步骤：**
+
+1. 将脚本上传到服务器：
 ```bash
-# 在本地执行
-./deploy/deploy-from-github.sh
+scp deploy/deploy-from-github.sh root@your-server:/root/
 ```
 
+2. SSH 登录服务器：
+```bash
+ssh root@your-server
+```
+
+3. 编辑脚本，修改顶部的配置参数：
+```bash
+vim /root/deploy-from-github.sh
+```
+
+4. 修改以下配置项：
+```bash
+# GitHub 仓库配置
+# 可以是公开仓库或私有仓库
+# 如果是私有仓库，可以直接在地址中携带认证信息，例如：
+# https://username:token@github.com/username/repo.git
+GITHUB_REPO="https://github.com/username/qoder.git"  # GitHub 仓库地址
+GITHUB_BRANCH="main"                    # Git 分支名称
+
+# 部署配置
+REMOTE_DIR="/opt/mini-jira"            # 远程部署目录
+```
+
+5. 执行脚本：
+```bash
+chmod +x /root/deploy-from-github.sh
+./deploy-from-github.sh
+```
+
+**如何配置私有仓库访问：**
+
+如果 GitHub 仓库是私有的，需要在仓库地址中携带认证信息：
+
+**方式一：在 URL 中携带 Token（推荐）**
+1. 在 GitHub 上生成 Token：Settings -> Developer settings -> Personal access tokens
+2. 选择 `repo` 权限并生成
+3. 在仓库地址中添加认证信息：`https://username:token@github.com/username/repo.git`
+
+**方式二：使用 SSH（更安全）**
+1. 将仓库地址改为 SSH 格式：`git@github.com:username/qoder.git`
+2. 确保服务器上有 SSH 密钥并已添加到 GitHub
+
 **特性：**
-- 一键完成所有部署操作
+- 在服务器上直接执行，无需本地连接
 - 自动从 GitHub 拉取最新代码
 - 支持重复部署，无需手动清理
 - 自动处理所有异常和错误
 - 自动安装 Docker、Git、Java、Maven 等依赖
-
-**使用步骤：**
-1. 确保代码已推送到 GitHub
-2. 在本地执行脚本
-3. 按提示输入服务器信息和 GitHub 仓库地址
-4. 等待自动部署完成
+- 支持 GitHub 私有仓库（URL 中携带认证信息）
+- 配置参数在脚本顶部，一目了然
 
 ### 方式四：使用 Docker 🐳
 

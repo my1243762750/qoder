@@ -94,23 +94,89 @@ Docker Compose 编排配置，用于一键启动 MySQL 和应用服务。
 - 在服务器上自动构建和部署
 
 ### deploy-from-github.sh ⭐ 推荐
-从 GitHub 自动化部署到服务器，支持重复部署，自动处理所有异常。
+在服务器上直接执行，从 GitHub 自动化部署，支持重复部署，自动处理所有异常。
 
 **使用方法：**
+
+1. 将脚本上传到服务器：
 ```bash
-# 在本地执行
-./deploy/deploy-from-github.sh
+scp deploy/deploy-from-github.sh root@your-server:/root/
+```
+
+2. SSH 登录服务器：
+```bash
+ssh root@your-server
+```
+
+3. 编辑脚本，修改顶部的配置参数：
+```bash
+vim /root/deploy-from-github.sh
+```
+
+4. 修改以下配置项：
+```bash
+# GitHub 仓库配置
+# 可以是公开仓库或私有仓库
+# 如果是私有仓库，可以直接在地址中携带认证信息，例如：
+# https://username:token@github.com/username/repo.git
+GITHUB_REPO="https://github.com/username/qoder.git"  # GitHub 仓库地址
+GITHUB_BRANCH="main"                    # Git 分支名称
+
+# 部署配置
+REMOTE_DIR="/opt/mini-jira"            # 远程部署目录
+```
+
+5. 执行脚本：
+```bash
+chmod +x /root/deploy-from-github.sh
+./deploy-from-github.sh
+```
+
+**如何配置私有仓库访问：**
+
+如果 GitHub 仓库是私有的，需要在仓库地址中携带认证信息：
+
+**方式一：在 URL 中携带 Token（推荐）**
+
+1. 在 GitHub 上生成 Personal Access Token：
+   - 进入：Settings -> Developer settings -> Personal access tokens -> Tokens (classic)
+   - 点击 "Generate new token (classic)"
+   - 选择需要的权限（至少需要 `repo` 权限）
+   - 点击 "Generate token" 生成 token
+
+2. 复制生成的 token（只显示一次，请妥善保存）
+
+3. 在脚本中配置仓库地址（包含认证信息）：
+```bash
+GITHUB_REPO="https://username:ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@github.com/username/qoder.git"
+```
+
+**方式二：使用 SSH（更安全）**
+
+1. 将仓库地址改为 SSH 格式：
+```bash
+GITHUB_REPO="git@github.com:username/qoder.git"
+```
+
+2. 确保服务器上有 SSH 密钥并已添加到 GitHub：
+```bash
+# 在服务器上生成 SSH 密钥
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# 查看公钥
+cat ~/.ssh/id_ed25519.pub
+
+# 将公钥添加到 GitHub：Settings -> SSH and GPG keys -> New SSH key
 ```
 
 **功能：**
-- 交互式输入服务器信息和 GitHub 仓库地址
-- 自动检测并安装 Docker、Git、Java、Maven
 - 自动从 GitHub 拉取最新代码
 - 智能判断首次部署或更新部署
 - 自动停止旧容器、清理旧镜像
 - 自动构建 Docker 镜像并启动服务
 - 自动健康检查和状态验证
 - 完善的错误处理和日志输出
+- 支持 GitHub 私有仓库（URL 中携带认证或 SSH）
 
 **特性：**
 - ✅ 支持重复部署，无需手动清理
@@ -118,22 +184,40 @@ Docker Compose 编排配置，用于一键启动 MySQL 和应用服务。
 - ✅ 智能检测服务器环境，自动安装缺失的依赖
 - ✅ 完整的部署日志和状态反馈
 - ✅ 健康检查确保服务正常运行
+- ✅ 配置参数在脚本顶部，一目了然
+- ✅ 支持 GitHub 私有仓库访问（URL 中携带认证信息）
+- ✅ 在服务器上直接执行，无需本地连接
 
 **适用场景：**
-- 代码托管在 GitHub
+- 代码托管在 GitHub（公开或私有）
 - 需要频繁更新部署
 - 希望一键完成所有部署操作
 - 不想手动处理各种异常情况
+- 在服务器上直接执行，更简单方便
 
 **示例：**
+
 ```bash
-./deploy/deploy-from-github.sh
-# 按提示输入：
-# - 服务器 IP：123.45.67.89
-# - SSH 用户名：root
-# - SSH 端口：22
-# - GitHub 仓库：https://github.com/yourname/qoder.git
-# - Git 分支：main
+# 1. 上传脚本到服务器
+scp deploy/deploy-from-github.sh root@your-server:/root/
+
+# 2. 登录服务器
+ssh root@your-server
+
+# 3. 编辑配置
+vim /root/deploy-from-github.sh
+
+# 4. 修改配置项
+
+# 如果是公开仓库
+GITHUB_REPO="https://github.com/your-username/qoder.git"
+
+# 如果是私有仓库，在 URL 中携带认证信息
+GITHUB_REPO="https://your-username:ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@github.com/your-username/qoder.git"
+
+# 5. 执行部署
+chmod +x /root/deploy-from-github.sh
+./root/deploy-from-github.sh
 ```
 
 ### monitor.sh
