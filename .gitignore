@@ -97,3 +97,7 @@ coverage/
 *.orig
 *.rej
 
+# postman 
+.postman/
+postman/
+
