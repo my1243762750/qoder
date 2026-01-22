@@ -1,0 +1,81 @@
+### Mini Jira API 测试集合
+### 使用 IntelliJ IDEA HTTP Client 运行
+
+### 1. 用户注册
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "testuser",
+  "password": "test123456"
+}
+
+###
+
+### 2. 用户登录
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "testuser",
+  "password": "test123456"
+}
+
+> {%
+    client.global.set("auth_token", response.body.data.token);
+%}
+
+###
+
+### 3. 创建项目（需要登录）
+POST http://localhost:8080/api/projects
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "我的第一个项目",
+  "description": "这是一个测试项目"
+}
+
+> {%
+    client.global.set("project_id", response.body.data.id);
+%}
+
+###
+
+### 4. 查看我的项目列表
+GET http://localhost:8080/api/projects
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 5. 创建任务（需要登录）
+POST http://localhost:8080/api/projects/{{project_id}}/issues
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "title": "修复登录bug",
+  "description": "用户无法登录系统",
+  "priority": "HIGH"
+}
+
+###
+
+### 6. 查看项目任务列表
+GET http://localhost:8080/api/projects/{{project_id}}/issues
+Authorization: Bearer {{auth_token}}
+
+###
+
+### 7. 测试未授权访问（应该返回 403）
+GET http://localhost:8080/api/projects
+
+###
+
+### 8. 测试无效 Token（应该返回 403）
+GET http://localhost:8080/api/projects
+Authorization: Bearer invalid-token-here
+
+###
