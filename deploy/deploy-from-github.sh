@@ -183,25 +183,28 @@ deploy_app() {
     echo "🚀 开始部署"
     echo "======================================"
 
-    # 1. 创建应用目录
+    # 2. 检查部署状态
     echo ""
-    echo "📁 创建应用目录..."
-    mkdir -p $REMOTE_DIR
-    cd $REMOTE_DIR
+    echo "� 检查部署状态..."
 
-    # 2. 检查是否已存在 Git 仓库
-    echo ""
-    echo "🔍 检查 Git 仓库..."
-
-    if [ -d ".git" ]; then
-        echo "发现已有 Git 仓库，拉取最新代码..."
+    # 检查目录是否存在
+    if [ ! -d "$REMOTE_DIR" ]; then
+        echo "首次部署：目录不存在，创建并克隆..."
+        mkdir -p $REMOTE_DIR
+        cd $REMOTE_DIR
+        git clone $GITHUB_REPO .
+        git checkout $GITHUB_BRANCH
+    elif [ ! -d "$REMOTE_DIR/.git" ]; then
+        echo "首次部署：目录存在但不是 Git 仓库，克隆代码..."
+        cd $REMOTE_DIR
+        git clone $GITHUB_REPO .
+        git checkout $GITHUB_BRANCH
+    else
+        echo "更新部署：Git 仓库已存在，拉取最新代码..."
+        cd $REMOTE_DIR
         git fetch origin
         git checkout $GITHUB_BRANCH
         git pull origin $GITHUB_BRANCH
-    else
-        echo "克隆新仓库..."
-        git clone $GITHUB_REPO .
-        git checkout $GITHUB_BRANCH
     fi
 
     # 3. 停止旧容器
