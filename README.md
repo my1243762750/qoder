@@ -85,6 +85,126 @@ qoder/
 - **MySQL**: 8.0+
 - **操作系统**: macOS / Linux / Windows
 
+## ⚡ 如何启动项目
+
+### 🎯 当前项目状态
+
+✅ **项目已经启动运行中！**
+
+之前我已经帮你完成了：
+1. ✅ 创建了数据库 `mini_jira` 和用户 `minijira`
+2. ✅ 配置了 `application.yml`（数据库连接、JWT密钥等）
+3. ✅ 安装了 Maven 依赖
+4. ✅ 启动了 Spring Boot 应用（运行在后台）
+
+**应用地址**: http://localhost:8080
+
+### 🔄 如何重新启动项目
+
+如果你关闭了终端或想重新启动，有以下几种方式：
+
+#### 方式 1: 使用 Maven 命令（最常用）
+
+```bash
+# 进入项目目录
+cd /Users/apple/IdeaProjects/InterviewProject/qoder
+
+# 启动项目
+mvn spring-boot:run
+```
+
+这个命令会：
+- 自动编译代码
+- 启动 Spring Boot 应用
+- 在控制台显示日志
+- 按 `Ctrl+C` 可停止
+
+#### 方式 2: 使用启动脚本
+
+```bash
+# 进入项目目录
+cd /Users/apple/IdeaProjects/InterviewProject/qoder
+
+# 运行启动脚本（会自动检查 MySQL 连接）
+./start.sh
+```
+
+#### 方式 3: 使用 IntelliJ IDEA / Qoder
+
+1. 在 Qoder 中打开项目
+2. 找到 `src/main/java/com/qoder/minijira/MiniJiraApplication.java`
+3. 右键点击文件，选择 "Run 'MiniJiraApplication'"
+4. 或者点击类旁边的绿色运行按钮 ▶️
+
+#### 方式 4: 运行打包后的 JAR
+
+```bash
+# 先打包
+mvn clean package -DskipTests
+
+# 运行 JAR 文件
+java -jar target/mini-jira-0.0.1-SNAPSHOT.jar
+```
+
+#### 方式 5: 使用 Docker
+
+```bash
+# 启动所有服务（MySQL + 应用）
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f mini-jira-app
+
+# 停止服务
+docker-compose down
+```
+
+### 🔍 如何检查项目是否在运行
+
+1. **检查端口占用**：
+```bash
+lsof -i:8080
+# 如果看到 java 进程，说明项目正在运行
+```
+
+2. **访问测试接口**：
+```bash
+curl http://localhost:8080/api/auth/register
+# 如果返回数据（而不是连接错误），说明项目在运行
+```
+
+3. **查看进程**：
+```bash
+ps aux | grep spring-boot
+# 查找是否有 Spring Boot 进程
+```
+
+### 🛑 如何停止项目
+
+- **在终端运行的**：按 `Ctrl+C`
+- **在后台运行的**：
+  ```bash
+  # 找到进程
+  lsof -ti:8080
+  
+  # 杀掉进程
+  kill -9 $(lsof -ti:8080)
+  ```
+
+### 💡 关于 Qoder 的启动
+
+从你的截图看，Qoder 本身是一个 AI 编程助手工具，它：
+- 不是项目的一部分，而是帮助你开发的工具
+- 类似于 GitHub Copilot 或 Cursor
+- 可以帮你写代码、理解代码、执行命令等
+- `.qoder/` 目录存放的是给 Qoder 的项目规则和技能配置
+
+Qoder 的使用：
+1. 在 Qoder 中打开项目文件夹
+2. 可以在聊天窗口问问题
+3. 可以选中代码让 Qoder 帮忙解释或修改
+4. Qoder 会根据 `.qoder/rules/` 中的规则来工作
+
 ## 📥 快速开始
 
 ### 方式一：使用自动化脚本（推荐） 🚀
