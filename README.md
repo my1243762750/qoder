@@ -17,11 +17,11 @@ Mini Jira 是一个简化版的任务管理系统，实现了用户认证、项�
 - **JWT** - 无状态认证
 - **Maven** - 项目构建工具
 - **Lombok** - 代码简化
+- **Docker** - 容器化部署
 
 ### 计划中（后续阶段）
 - Redis - 缓存
 - RabbitMQ - 消息队列
-- Docker - 容器化部署
 - Spring Boot Actuator - 监控
 
 ## 📦 项目结构
@@ -65,17 +65,22 @@ qoder/
 ├── .qoder/                         # AI 协作配置
 │   ├── rules/                      # 项目规则
 │   └── skills/                     # 技能模板
-├── .gitignore                      # Git 忽略配置
-├── CHANGELOG.md                    # 版本变更记录
-├── CONTRIBUTING.md                 # 贡献指南
-├── Dockerfile                      # Docker 镜像构建
-├── docker-compose.yml              # Docker 编排配置
-├── LICENSE                         # MIT 开源协议
-├── README.md                       # 项目文档（本文件）
-├── backend-learning-plan.md        # 完整学习计划
-├── build.sh                        # 构建脚本
-├── start.sh                        # 快速启动脚本
-└── pom.xml                         # Maven 配置
+├── deploy/                        # 部署配置目录
+│   ├── Dockerfile                # Docker 镜像构建
+│   ├── docker-compose.yml        # Docker 编排配置
+│   ├── build.sh                  # 构建脚本
+│   ├── start.sh                  # 快速启动脚本
+│   ├── deploy-aliyun.sh          # 阿里云部署脚本
+│   ├── deploy-to-server.sh       # 服务器部署脚本
+│   ├── deploy-from-github.sh     # GitHub 自动化部署脚本（推荐）
+│   └── monitor.sh                # 服务器监控脚本
+├── .gitignore                    # Git 忽略配置
+├── CHANGELOG.md                  # 版本变更记录
+├── CONTRIBUTING.md               # 贡献指南
+├── LICENSE                       # MIT 开源协议
+├── README.md                     # 项目文档（本文件）
+├── backend-learning-plan.md      # 完整学习计划
+└── pom.xml                       # Maven 配置
 ```
 
 ## 🛠️ 环境要求
@@ -126,7 +131,7 @@ mvn spring-boot:run
 cd /Users/apple/IdeaProjects/InterviewProject/qoder
 
 # 运行启动脚本（会自动检查 MySQL 连接）
-./start.sh
+./deploy/start.sh
 ```
 
 #### 方式 3: 使用 IntelliJ IDEA / Qoder
@@ -150,13 +155,13 @@ java -jar target/mini-jira-0.0.1-SNAPSHOT.jar
 
 ```bash
 # 启动所有服务（MySQL + 应用）
-docker-compose up -d
+docker compose -f deploy/docker-compose.yml up -d
 
 # 查看日志
-docker-compose logs -f mini-jira-app
+docker compose -f deploy/docker-compose.yml logs -f mini-jira-app
 
 # 停止服务
-docker-compose down
+docker compose -f deploy/docker-compose.yml down
 ```
 
 ### 🔍 如何检查项目是否在运行
@@ -275,7 +280,7 @@ spring:
 ```bash
 mvn clean install -DskipTests
 # 或使用构建脚本
-./build.sh
+./deploy/build.sh
 ```
 
 ### 5. 启动应用
@@ -286,17 +291,39 @@ mvn spring-boot:run
 
 应用将在 `http://localhost:8080` 启动。
 
-### 方式三：使用 Docker 🐳
+### 方式三：从 GitHub 自动化部署 ⭐ 推荐
+
+如果你的代码托管在 GitHub，这是最简单的部署方式：
+
+```bash
+# 在本地执行
+./deploy/deploy-from-github.sh
+```
+
+**特性：**
+- 一键完成所有部署操作
+- 自动从 GitHub 拉取最新代码
+- 支持重复部署，无需手动清理
+- 自动处理所有异常和错误
+- 自动安装 Docker、Git、Java、Maven 等依赖
+
+**使用步骤：**
+1. 确保代码已推送到 GitHub
+2. 在本地执行脚本
+3. 按提示输入服务器信息和 GitHub 仓库地址
+4. 等待自动部署完成
+
+### 方式四：使用 Docker 🐳
 
 ```bash
 # 启动所有服务（MySQL + 应用）
-docker-compose up -d
+docker compose -f deploy/docker-compose.yml up -d
 
 # 查看日志
-docker-compose logs -f mini-jira-app
+docker compose -f deploy/docker-compose.yml logs -f mini-jira-app
 
 # 停止服务
-docker-compose down
+docker compose -f deploy/docker-compose.yml down
 ```
 
 ## 📚 API 文档
@@ -429,12 +456,12 @@ mvn test -Dtest=UserServiceTest
 
 ### 构建脚本
 ```bash
-./build.sh          # 清理、编译、测试、打包一键完成
+./deploy/build.sh          # 清理、编译、测试、打包一键完成
 ```
 
 ### 启动脚本
 ```bash
-./start.sh          # 检查 MySQL + 启动应用
+./deploy/start.sh          # 检查 MySQL + 启动应用
 ```
 
 ### API 测试
@@ -442,22 +469,42 @@ mvn test -Dtest=UserServiceTest
 
 ## 📦 打包部署
 
+### 本地部署
 ```bash
 # 打包成 jar
 mvn clean package
 # 或使用构建脚本
-./build.sh
+./deploy/build.sh
 
 # 运行 jar
 java -jar target/mini-jira-0.0.1-SNAPSHOT.jar
+```
 
-# 使用 Docker 部署
-docker-compose up -d
+### Docker 部署
+```bash
+# 使用 Docker Compose 部署
+docker compose -f deploy/docker-compose.yml up -d
+```
+
+### 服务器部署
+```bash
+# 从 GitHub 自动化部署（推荐）
+./deploy/deploy-from-github.sh
+
+# 阿里云服务器一键部署
+./deploy/deploy-aliyun.sh
+
+# 从本地上传到服务器并部署
+./deploy/deploy-to-server.sh
+
+# 服务器监控
+./deploy/monitor.sh
 ```
 
 ## 📖 项目文档
 
 - **[架构设计文档](docs/ARCHITECTURE.md)** - 详细的技术架构和设计说明
+- **[部署文档](deploy/README.md)** - 部署配置和脚本说明
 - **[贡献指南](CONTRIBUTING.md)** - 如何参与项目开发
 - **[变更日志](CHANGELOG.md)** - 版本历史和更新记录
 - **[学习计划](backend-learning-plan.md)** - 完整的后端学习路线图
