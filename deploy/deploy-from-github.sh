@@ -24,7 +24,7 @@ GITHUB_REPO="git@github.com:my1243762750/qoder.git"  # GitHub 仓库地址
 GITHUB_BRANCH="main"                    # Git 分支名称
 
 # 部署配置
-REMOTE_DIR="/opt/mini-jira"            # 远程部署目录
+REMOTE_DIR="/opt/mini-jira/qoder"            # 远程部署目录
 
 #==============================================================================
 # 以下为脚本逻辑，一般不需要修改
@@ -172,12 +172,50 @@ check_server_environment() {
         echo_success "Maven 安装完成"
     fi
 
+    # 检查 Docker Compose
+    if ! docker compose version &> /dev/null; then
+        echo_warning "Docker Compose 未安装，开始安装..."
+        
+        . /etc/os-release
+        
+        case $ID in
+            centos|rhel|alinux)
+                # 尝试安装 podman-compose 或 docker-compose-plugin，但不强制要求两者都成功
+                if command -v podman &> /dev/null; then
+                    yum install -y podman-compose || true
+                fi
+                yum install -y docker-compose-plugin || true
+                ;;
+            ubuntu|debian)
+                apt-get update
+                apt-get install -y docker-compose-plugin
+                ;;
+        esac
+        
+        echo_success "Docker Compose 安装/检查完成"
+    fi
+
     echo_success "服务器环境检查完成"
 }
+
+# 获取 Compose 命令
+get_compose_cmd() {
+        if docker compose version &> /dev/null; then
+            echo "docker compose"
+        elif command -v podman-compose &> /dev/null; then
+            echo "podman-compose"
+        elif command -v docker-compose &> /dev/null; then
+            echo "docker-compose"
+        else
+            echo "docker compose" # 默认
+        fi
+    }
 
 # 部署应用
 deploy_app() {
     echo_step "开始部署应用..."
+    
+    echo_info "使用 Compose 命令: $COMPOSE"
     
     echo "======================================"
     echo "🚀 开始部署"
@@ -210,8 +248,8 @@ deploy_app() {
     # 3. 停止旧容器
     echo ""
     echo "🛑 停止旧容器..."
-    if [ -f "docker-compose.yml" ]; then
-        docker compose down 2>/dev/null || true
+    if [ -f "deploy/docker-compose.yml" ]; then
+        $COMPOSE -f deploy/docker-compose.yml down 2>/dev/null || true
         echo "旧容器已停止"
     else
         echo "未找到旧容器"
@@ -222,15 +260,22 @@ deploy_app() {
     echo "🧹 清理旧镜像..."
     docker image prune -f 2>/dev/null || true
 
+    # 设置 Podman 默认仓库（如果使用 Podman）
+    if command -v podman &> /dev/null; then
+        echo_info "配置 Podman 默认仓库以避免交互提示..."
+        # 即使无法修改全局配置，也可以通过环境变量或别名尽量减少干扰
+        # 这里我们主要依赖 Dockerfile 和 Compose 中的全限定名称
+    fi
+
     # 5. 构建 Docker 镜像
     echo ""
     echo "🔨 构建 Docker 镜像..."
-    docker build -t mini-jira:latest .
+    docker build -t mini-jira:latest -f deploy/Dockerfile .
 
     # 6. 启动服务
     echo ""
     echo "🚀 启动服务..."
-    docker compose up -d
+    $COMPOSE -f deploy/docker-compose.yml up -d
 
     # 7. 等待服务启动
     echo ""
@@ -242,14 +287,14 @@ deploy_app() {
     echo "======================================"
     echo "📊 服务状态"
     echo "======================================"
-    docker compose ps
+    $COMPOSE -f deploy/docker-compose.yml ps
 
     # 9. 查看应用日志
     echo ""
     echo "======================================"
     echo "📝 应用日志（最近 30 行）"
     echo "======================================"
-    docker compose logs --tail=30 app
+    $COMPOSE -f deploy/docker-compose.yml logs --tail=30 mini-jira-app
 
     # 10. 健康检查
     echo ""
@@ -258,12 +303,12 @@ deploy_app() {
     echo "======================================"
 
     # 检查容器是否运行
-    if docker compose ps | grep -q "Up"; then
+    if $COMPOSE -f deploy/docker-compose.yml ps | grep -q "Up"; then
         echo "✅ 容器运行正常"
     else
         echo "❌ 容器未正常运行"
         echo "查看完整日志："
-        docker compose logs app
+        $COMPOSE -f deploy/docker-compose.yml logs mini-jira-app
         exit 1
     fi
 
@@ -296,10 +341,10 @@ show_deployment_result() {
     echo -e "  API 文档: ${GREEN}http://$(hostname -I | awk '{print $1}'):8080/swagger-ui.html${NC}"
     echo ""
     echo -e "${BLUE}常用命令：${NC}"
-    echo -e "  查看日志:   ${YELLOW}cd $REMOTE_DIR && docker compose logs -f app${NC}"
-    echo -e "  重启服务:   ${YELLOW}cd $REMOTE_DIR && docker compose restart${NC}"
-    echo -e "  停止服务:   ${YELLOW}cd $REMOTE_DIR && docker compose down${NC}"
-    echo -e "  查看状态:   ${YELLOW}cd $REMOTE_DIR && docker compose ps${NC}"
+    echo -e "  查看日志:   ${YELLOW}cd $REMOTE_DIR && $COMPOSE -f deploy/docker-compose.yml logs -f mini-jira-app${NC}"
+    echo -e "  重启服务:   ${YELLOW}cd $REMOTE_DIR && $COMPOSE -f deploy/docker-compose.yml restart${NC}"
+    echo -e "  停止服务:   ${YELLOW}cd $REMOTE_DIR && $COMPOSE -f deploy/docker-compose.yml down${NC}"
+    echo -e "  查看状态:   ${YELLOW}cd $REMOTE_DIR && $COMPOSE -f deploy/docker-compose.yml ps${NC}"
     echo ""
     echo -e "${YELLOW}⚠️  重要提示：${NC}"
     echo -e "  1. 请确保在服务器安全组中开放 8080 端口"
@@ -317,7 +362,7 @@ handle_error() {
     echo "  2. GitHub 仓库地址是否正确: $GITHUB_REPO"
     echo "  3. 服务器是否有足够的磁盘空间"
     echo "  4. 查看服务器日志："
-    echo "     cd $REMOTE_DIR && docker compose logs"
+    echo "     cd $REMOTE_DIR && $(get_compose_cmd) -f deploy/docker-compose.yml logs"
     exit 1
 }
 
@@ -329,21 +374,16 @@ main() {
     # 设置错误处理
     trap handle_error ERR
     
-    # 确认部署
-    echo -e "${YELLOW}确认开始部署？ [Y/n]: ${NC}"
-    read -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
-        echo_info "取消部署"
-        exit 0
-    fi
-    
     echo ""
     echo -e "${CYAN}开始部署流程...${NC}"
     echo ""
     
     # 执行部署流程
     check_server_environment
+    
+    # 初始化 Compose 命令
+    COMPOSE="$(get_compose_cmd)"
+    
     deploy_app
     show_deployment_result
 }
