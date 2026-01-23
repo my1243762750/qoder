@@ -360,8 +360,9 @@ docker compose -f deploy/docker-compose.yml down
 
 ## 📚 API 文档
 
-**完整的 API 测试集合**: `docs/api/api-test.http`
+**Swagger UI 访问地址**: `http://localhost:8080/swagger-ui.html`
 
+**完整的 API 测试集合**: `docs/api/api-test.http`
 你可以使用 IntelliJ IDEA 的 HTTP Client 直接运行测试，或参考以下示例：
 
 ### 认证接口
