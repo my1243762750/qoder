@@ -9,4 +9,8 @@ import java.util.List;
 public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     List<Issue> findByProject(Project project);
+
+    long countByProjectOwnerId(Long ownerId);
+
+    long countByAssigneeId(Long assigneeId);
 }

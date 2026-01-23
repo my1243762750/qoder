@@ -101,3 +101,7 @@ coverage/
 .postman/
 postman/
 
+#frontend
+frontend/node_modules/
+frontend/dist/
+
