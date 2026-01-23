@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.qoder.minijira.issue.dto.IssueUpdateRequest;
+
 @Service
 public class IssueService {
 
@@ -47,6 +49,29 @@ public class IssueService {
                 .orElseThrow(() -> new BusinessException(3000, "Project not found"));
         List<Issue> issues = issueRepository.findByProject(project);
         return issues.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public IssueResponse updateIssue(Long issueId, IssueUpdateRequest request) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new BusinessException(3000, "Issue not found"));
+        
+        if (request.getStatus() != null) {
+            issue.setStatus(IssueStatus.valueOf(request.getStatus().toUpperCase()));
+        }
+        if (request.getPriority() != null) {
+            issue.setPriority(IssuePriority.valueOf(request.getPriority().toUpperCase()));
+        }
+        
+        Issue saved = issueRepository.save(issue);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void deleteIssue(Long issueId) {
+         Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new BusinessException(3000, "Issue not found"));
+         issueRepository.delete(issue);
     }
 
     private IssueResponse toResponse(Issue issue) {

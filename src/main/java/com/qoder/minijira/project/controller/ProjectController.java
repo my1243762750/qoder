@@ -3,13 +3,10 @@ package com.qoder.minijira.project.controller;
 import com.qoder.minijira.common.api.ApiResponse;
 import com.qoder.minijira.project.dto.ProjectCreateRequest;
 import com.qoder.minijira.project.dto.ProjectResponse;
+import com.qoder.minijira.project.dto.ProjectUpdateRequest;
 import com.qoder.minijira.project.service.ProjectService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -33,5 +30,17 @@ public class ProjectController {
     public ApiResponse<List<ProjectResponse>> listMyProjects() {
         List<ProjectResponse> projects = projectService.listMyProjects();
         return ApiResponse.success(projects);
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<ProjectResponse> getProject(@PathVariable Long id) {
+        ProjectResponse response = projectService.getProject(id);
+        return ApiResponse.success(response);
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<ProjectResponse> updateProject(@PathVariable Long id, @Valid @RequestBody ProjectUpdateRequest request) {
+        ProjectResponse response = projectService.updateProject(id, request);
+        return ApiResponse.success(response);
     }
 }

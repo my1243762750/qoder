@@ -13,7 +13,7 @@
               clearable
             />
           </div>
-          <el-button type="primary" @click="dialogVisible = true">
+          <el-button type="primary" @click="openCreateDialog">
             <el-icon><Plus /></el-icon> Create Project
           </el-button>
         </div>
@@ -39,7 +39,7 @@
         <el-table-column label="Actions" width="150" fixed="right">
             <template #default="scope">
                 <el-button link type="primary" size="small" @click="viewProject(scope.row.id)">View</el-button>
-                <el-button link type="danger" size="small">Settings</el-button>
+                <el-button link type="danger" size="small" @click="openEditDialog(scope.row)">Settings</el-button>
             </template>
         </el-table-column>
       </el-table>
@@ -47,7 +47,7 @@
 
     <el-dialog 
         v-model="dialogVisible" 
-        title="Create Project" 
+        :title="isEdit ? 'Edit Project' : 'Create Project'" 
         width="500px"
         destroy-on-close
     >
@@ -66,8 +66,19 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
+          <el-popconfirm 
+            v-if="isEdit"
+            title="Are you sure to delete this project?" 
+            @confirm="handleDelete"
+          >
+            <template #reference>
+              <el-button type="danger" plain style="float: left">Delete Project</el-button>
+            </template>
+          </el-popconfirm>
           <el-button @click="dialogVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="createProject" :loading="creating">Create Project</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="creating">
+            {{ isEdit ? 'Save Changes' : 'Create Project' }}
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -76,16 +87,20 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
+const router = useRouter()
 const projects = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const creating = ref(false)
 const searchQuery = ref('')
 const formRef = ref<FormInstance>()
+const isEdit = ref(false)
+const currentProjectId = ref<number | null>(null)
 
 const form = reactive({
   name: '',
@@ -108,18 +123,37 @@ const fetchProjects = async () => {
   }
 }
 
-const createProject = async () => {
+const openCreateDialog = () => {
+  isEdit.value = false
+  currentProjectId.value = null
+  form.name = ''
+  form.description = ''
+  dialogVisible.value = true
+}
+
+const openEditDialog = (row: any) => {
+  isEdit.value = true
+  currentProjectId.value = row.id
+  form.name = row.name
+  form.description = row.description
+  dialogVisible.value = true
+}
+
+const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
       if (valid) {
           creating.value = true
           try {
-            await request.post('/api/projects', form)
-            ElMessage.success('Project created successfully')
+            if (isEdit.value && currentProjectId.value) {
+                await request.put(`/api/projects/${currentProjectId.value}`, form)
+                ElMessage.success('Project updated successfully')
+            } else {
+                await request.post('/api/projects', form)
+                ElMessage.success('Project created successfully')
+            }
             dialogVisible.value = false
             fetchProjects()
-            form.name = ''
-            form.description = ''
           } catch (e) {
             // handled
           } finally {
@@ -129,9 +163,22 @@ const createProject = async () => {
   })
 }
 
-const viewProject = (id: number) => {
-    ElMessage.info('View project ' + id)
+const handleDelete = async () => {
+    if (!currentProjectId.value) return
+    try {
+        await request.delete(`/api/projects/${currentProjectId.value}`)
+        ElMessage.success('Project deleted successfully')
+        dialogVisible.value = false
+        fetchProjects()
+    } catch (e) {
+        // handled
+    }
 }
+
+const viewProject = (id: number) => {
+    router.push(`/projects/${id}`)
+}
+
 
 onMounted(() => {
   fetchProjects()
