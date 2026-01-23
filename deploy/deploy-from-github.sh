@@ -280,7 +280,7 @@ deploy_app() {
     # 7. 等待服务启动
     echo ""
     echo "⏳ 等待服务启动..."
-    sleep 15
+    sleep 30
 
     # 8. 检查服务状态
     echo ""

@@ -22,7 +22,7 @@ FROM m.daocloud.io/docker.io/library/eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # 创建非 root 用户
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN addgroup -S spring && adduser -S spring -G spring && mkdir -p logs && chown spring:spring logs
 USER spring:spring
 
 # 从构建阶段复制 JAR 文件
